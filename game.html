@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Үйгө жол — игра о пути к своей квартире</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2F6; --panel:#FFFFFF; --ink:#1C2230; --ink2:#566070; --line:#DCE2EA;
+  --red:#B4232A; --redSoft:#F8E3E3; --gold:#E9A93A; --goldSoft:#FBF0DA; --green:#2F7A52; --greenSoft:#DFF1E6;
+  --sky1:#2B3A5C; --sky2:#E58F6A; --mount:#3C4B6B; --mount2:#56658A; --bld:#26314A;
+  --shadow:0 1px 2px rgba(28,34,48,.06),0 8px 24px rgba(28,34,48,.08);
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121725; --panel:#1B2233; --ink:#EEF1F6; --ink2:#A6AFC0; --line:#2C3549;
+  --redSoft:#3A1E24; --goldSoft:#3A2F1A; --greenSoft:#1C3328;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#121725; --panel:#1B2233; --ink:#EEF1F6; --ink2:#A6AFC0; --line:#2C3549;
+  --redSoft:#3A1E24; --goldSoft:#3A2F1A; --greenSoft:#1C3328;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.app{max-width:1060px;margin:0 auto;padding:16px 16px 40px}
+.grid{display:grid;gap:16px}
+@media(min-width:880px){.grid{grid-template-columns:1fr 1.05fr;align-items:start}.left{position:sticky;top:16px}}
+
+/* scene */
+.scene{position:relative;border-radius:22px;overflow:hidden;aspect-ratio:16/10;background:linear-gradient(180deg,var(--sky1) 0%,#4A4F7A 55%,var(--sky2) 100%);box-shadow:var(--shadow)}
+.scene svg{position:absolute;inset:0;width:100%;height:100%}
+.yearTag{position:absolute;left:16px;top:14px;color:#fff;z-index:2}
+.yearTag b{font-family:var(--display);font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.02em;display:block;line-height:1}
+.yearTag span{font-size:13px;opacity:.85}
+.fx{position:absolute;right:14px;top:14px;z-index:2;color:#fff;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);padding:6px 10px;border-radius:10px;font-size:13px}
+.win{transition:fill .6s ease}
+.win.on{fill:#F6C25B}
+.win.mine{fill:var(--red)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.stat{background:var(--panel);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)}
+.stat small{display:block;color:var(--ink2);font-size:12.5px}
+.stat strong{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.stat.neg strong{color:var(--red)}
+.bar{height:8px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;border-radius:6px;transition:width .6s ease,background .6s}
+.homeBtn{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;border:0;border-radius:14px;padding:14px 16px;background:var(--ink);color:var(--panel);font-weight:700;text-align:left}
+.homeBtn small{font-weight:500;opacity:.8;display:block}
+.homeBtn .pill{background:var(--gold);color:#1C2230;border-radius:999px;padding:4px 10px;font-size:13px;white-space:nowrap}
+
+/* card */
+.card{background:var(--panel);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+.card.enter{animation:enter .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes enter{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.emoji{font-size:40px;line-height:1}
+h1,h2{font-family:var(--display);letter-spacing:-.02em;margin:.3em 0 .35em}
+h1{font-size:clamp(30px,6vw,46px);font-weight:800;line-height:1.05}
+h2{font-size:clamp(20px,3.4vw,26px);font-weight:700;line-height:1.15}
+.lead{color:var(--ink2);margin:0 0 16px}
+.choices{display:grid;gap:10px}
+.choice{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--panel);border-radius:14px;padding:13px 15px;transition:border-color .15s,transform .1s}
+.choice:hover{border-color:var(--ink2)}
+.choice:active{transform:scale(.99)}
+.choice b{display:block;font-weight:700}
+.choice span{color:var(--ink2);font-size:14px}
+.choice[disabled]{opacity:.45;cursor:not-allowed}
+.result{margin-top:4px}
+.deltas{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.delta{border-radius:999px;padding:5px 11px;font-size:14px;font-weight:700}
+.delta.pos{background:var(--greenSoft);color:var(--green)}
+.delta.neg{background:var(--redSoft);color:var(--red)}
+.delta.neu{background:var(--goldSoft);color:#8A5A0B}
+:root[data-theme="dark"] .delta.neu{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .delta.neu{color:var(--gold)}}
+.lesson{background:var(--goldSoft);border-radius:14px;padding:14px 16px;margin:14px 0}
+.lesson b{font-family:var(--display);font-size:15px;font-weight:700}
+.lesson p{margin:6px 0 0}
+.primary{border:0;border-radius:14px;padding:14px 20px;background:var(--red);color:#fff;font-weight:700;font-size:16px;width:100%}
+.primary:active{transform:scale(.99)}
+.ghost{border:1.5px solid var(--line);background:transparent;border-radius:14px;padding:12px 18px;font-weight:700;width:100%}
+.summary{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px;margin:10px 0 0;padding:12px 14px;background:var(--bg);border-radius:12px}
+.summary .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.muted{color:var(--ink2);font-size:13.5px}
+
+/* sheet */
+.sheetWrap{position:fixed;inset:0;background:rgba(15,20,32,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheetWrap.open{display:flex}
+.sheet{background:var(--panel);width:100%;max-width:640px;max-height:92%;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));animation:up .3s cubic-bezier(.2,.8,.2,1)}
+@media(min-width:700px){.sheetWrap{align-items:center}.sheet{border-radius:22px}}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.offer{border:1.5px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}
+.offer h3{margin:0;font-family:var(--display);font-size:16px;font-weight:700}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:14px;margin:10px 0}
+.kv span:nth-child(even){text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.check{display:flex;gap:8px;align-items:flex-start;border-radius:10px;padding:8px 10px;font-size:13.5px;margin:8px 0}
+.check.g{background:var(--greenSoft)}.check.y{background:var(--goldSoft)}.check.r{background:var(--redSoft)}
+.tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--bg);color:var(--ink2)}
+
+/* end */
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}
+.badge{display:flex;gap:6px;align-items:center;background:var(--bg);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
+.chart{width:100%;height:150px;margin:6px 0 14px}
+.big{font-family:var(--display);font-size:clamp(30px,6vw,44px);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.foot{margin-top:18px;text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="grid">
+    <div class="left">
+      <div class="scene" aria-hidden="true">
+        <div class="yearTag"><b id="yearBig">2027</b><span id="ageTxt">Вам 24 года</span></div>
+        <div class="fx" id="fxTxt">$1 = 87,5 сом</div>
+        <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice">
+          <circle cx="320" cy="78" r="16" fill="#F6D7A7" opacity=".9"/>
+          <path d="M0 175 L40 120 L70 150 L110 85 L150 140 L185 100 L230 160 L270 110 L310 150 L350 95 L400 150 L400 250 L0 250Z" fill="var(--mount)"/>
+          <path d="M100 95 L110 85 L120 96 L114 94 L110 99 L105 94Z M342 103 L350 95 L358 104 L352 102 L349 106 L346 102Z" fill="#E7ECF5" opacity=".9"/>
+          <path d="M0 200 L60 168 L120 190 L190 160 L260 192 L330 170 L400 186 L400 250 L0 250Z" fill="var(--mount2)"/>
+          <g id="city" fill="#1F2840">
+            <rect x="14" y="188" width="34" height="62"/><rect x="52" y="200" width="26" height="50"/>
+            <rect x="300" y="194" width="30" height="56"/><rect x="336" y="182" width="40" height="68"/><rect x="380" y="204" width="20" height="46"/>
+          </g>
+          <g id="bld"></g>
+          <rect x="0" y="246" width="400" height="4" fill="#1A2236"/>
+        </svg>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div>
+      <div class="card enter" id="card"></div>
+      <p class="muted foot">Все цифры в игре условные и упрощённые. Это учебная модель, а не финансовая консультация.</p>
+    </div>
+  </div>
+</div>
+<div class="sheetWrap" id="sheetWrap" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet" id="sheet"></div></div>
+
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const fmt = n => Math.round(n).toLocaleString("ru-RU").replace(/,/g," ");
+const som = n => fmt(n) + " сом";
+const pct = n => (Math.round(n*10)/10).toLocaleString("ru-RU") + "%";
+const rnd = (a,b) => a + Math.random()*(b-a);
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+function annuity(P, rAnnual, months){const r=rAnnual/12; return r===0?P/months:P*r/(1-Math.pow(1+r,-months));}
+/* effective annual rate from cash flows: received now, equal monthly payments */
+function ear(received, pay, n){
+  if(received<=0||pay*n<=received) return 0;
+  let lo=0,hi=1; for(let i=0;i<80;i++){const m=(lo+hi)/2;let v=0;for(let k=1;k<=n;k++)v+=pay/Math.pow(1+m,k); if(v>received)lo=m;else hi=m;}
+  return (Math.pow(1+(lo+hi)/2,12)-1)*100;
+}
+
+/* ---------- state ---------- */
+const YEARS = 10, START = 2027;
+let S;
+function newGame(){
+  S = {i:0, cal:START, age:24, fx:87.5, priceUSD:38000, salary:60000, living:22000, rent:20000,
+       cash:180000, micro:0, loans:[], home:null, queueSince:null, stress:20, lostMonths:0,
+       brother:0, deposit:false, skill:false, devChecked:false, lessons:{}, history:[], spentMicro:false,
+       deck:buildDeck(), phase:"event", oneOff:0, livingAdj:0, yearLog:null};
+  S.history.push(capital());
+}
+
+/* ---------- economy ---------- */
+function homeValue(){return S.priceUSD*S.fx}
+function mortgagePay(){return S.home&&S.home.kind!=="dev"&&S.home.bal>0?S.home.pay:0}
+function devPay(){return S.home&&S.home.kind==="dev"&&S.home.balUSD>0?S.home.payUSD*S.fx:0}
+function loanPays(){return S.loans.reduce((a,l)=>a+(l.left>0?l.pay:0),0)}
+function livesInOwn(){return S.home && (S.home.kind!=="dev" || S.cal>=S.home.ready)}
+function monthlyOut(){return S.living + (livesInOwn()?0:S.rent) + mortgagePay() + devPay() + loanPays()}
+function debtPays(){return mortgagePay()+devPay()+loanPays()+S.micro*0.08}
+function dti(extra=0){return (debtPays()+extra)/S.salary*100}
+function debts(){let d=S.micro+S.loans.reduce((a,l)=>a+l.bal,0); if(S.home){d+= S.home.kind==="dev"?S.home.balUSD*S.fx:S.home.bal} return d}
+function capital(){let v=S.cash; if(S.home) v+= S.home.kind==="dev"&&S.cal<S.home.ready? homeValue()*0.9 : homeValue(); return v-debts()}
+function cushionMonths(){return S.cash/Math.max(1,monthlyOut())}
+
+function learn(id){const L=LESSONS[id]; if(L) S.lessons[id]=L;}
+
+function endYear(){
+  const log=[]; const before=S.cash;
+  const months=12-S.lostMonths;
+  let income=S.salary*months + S.brother*12;
+  let out=0;
+  for(let m=0;m<12;m++){
+    out+=S.living*(1+S.livingAdj) + (livesInOwn()?0:S.rent);
+    if(S.home&&S.home.kind!=="dev"&&S.home.bal>0){const it=S.home.bal*S.home.rate/12; const pr=Math.min(S.home.pay-it,S.home.bal); S.home.bal-=pr; out+=it+pr;}
+    if(S.home&&S.home.kind==="dev"&&S.home.balUSD>0){const p=Math.min(S.home.payUSD,S.home.balUSD); S.home.balUSD-=p; out+=p*S.fx;}
+    S.loans.forEach(l=>{if(l.left>0){const it=l.bal*l.rate/12;const pr=Math.min(l.pay-it,l.bal);l.bal-=pr;l.left--;out+=it+pr;}});
+  }
+  S.loans=S.loans.filter(l=>l.left>0&&l.bal>1);
+  out+=S.oneOff;
+  if(S.deposit&&S.cash>0) income+=S.cash*0.09;
+  // micro-loan growth (условно, с учётом комиссий и пени)
+  if(S.micro>0){const grow=S.micro*0.45; out+=0; S.micro+=grow; log.push(["neg","Проценты по микрозайму: +"+som(grow)]);}
+  S.cash+=income-out;
+  if(S.micro>0&&S.cash>0){const p=Math.min(S.cash,S.micro); S.cash-=p; S.micro-=p; if(p>0)log.push(["neu","Погашено микрозаймов: "+som(p)]);}
+  if(S.cash<0){S.micro+=-S.cash; log.push(["neg","Не хватило денег, взят микрозайм: "+som(-S.cash)]); S.cash=0; S.stress+=15; S.spentMicro=true; learn("spiral");}
+  const d=dti();
+  if(d>60){S.stress+=18; log.push(["neg","Долги съедают "+pct(d)+" дохода"]); learn("dti");}
+  else if(d>40) S.stress+=6;
+  if(S.micro>0) S.stress+=10;
+  if(cushionMonths()>=3){S.stress-=12;} else S.stress+=4;
+  if(livesInOwn()) S.stress-=6;
+  S.stress=clamp(S.stress,0,100);
+  if(S.stress>=100){const loss=S.salary*2; S.cash-=loss; S.stress=60; log.unshift(["neg","Выгорание: два месяца без работы, −"+som(loss)]); learn("burnout"); if(S.cash<0){S.micro+=-S.cash;S.cash=0;}}
+  if(S.home&&S.home.kind==="dev"&&S.cal+1===S.home.ready-0&&S.home.delayRoll){/* decided at purchase */}
+  // macro
+  const fxUp=rnd(0.0,0.025); S.fx*=1+fxUp;
+  S.priceUSD*=1+rnd(0.02,0.05);
+  S.salary*=S.skill?1.16:1.05; S.skill=false;
+  S.living*=1.06; S.rent*=1.07;
+  S.lostMonths=0; S.oneOff=0; S.livingAdj=0;
+  S.yearLog={delta:S.cash-before, log};
+  S.cal++; S.age++; S.i++;
+  S.history.push(capital());
+}
+
+/* ---------- lessons ---------- */
+const LESSONS={
+  zero:["🧾","«0% рассрочка»","Часто проценты уже спрятаны в цене. Сравнивайте цену в рассрочку с ценой за наличные."],
+  queue:["⏳","Длинные цели — заранее","Очереди и накопления требуют лет. Кто начинает раньше, тот выбирает, а не соглашается."],
+  pyramid:["🚩","Финансовая пирамида","Обещание огромного дохода за короткий срок — главный признак мошенничества."],
+  skill:["📈","Инвестиции в себя","Рост дохода — самый сильный рычаг на пути к квартире."],
+  cushion:["🛟","Подушка безопасности","3–6 месяцев расходов на отдельном счёте превращают кризис в неприятность."],
+  fx:["💱","Валютный риск","Доход в сомах, долг в долларах: когда сом слабеет, платёж растёт без вашего участия."],
+  family:["🤝","Семейная цель","Договоритесь письменно: кто сколько вносит и чья доля в квартире."],
+  payday:["🔥","Реальная ставка","«0,6% в день» с комиссией — это сотни процентов годовых. Ойлон считает это за 30 секунд."],
+  car:["🚗","Нужда и желание","Машина в кредит дешевеет, а платёж остаётся. Он отодвигает квартиру на годы."],
+  deposit:["🏦","Деньги должны работать","Наличные дома каждый год теряют цену из-за инфляции."],
+  checkdev:["🔍","Проверка застройщика","Разрешение на строительство, договор, история сданных домов — до первого платежа."],
+  lifestyle:["🎈","Инфляция образа жизни","Рост дохода незаметно уходит в рост трат. Откладывайте прибавку сразу."],
+  spiral:["🌀","Долговая спираль","Новый займ, чтобы закрыть старый, — самый дорогой путь."],
+  dti:["⚖️","Долговая нагрузка","Если на платежи уходит больше 60% дохода, любой сбой ведёт к просрочке."],
+  burnout:["🔋","Стресс тоже стоит денег","Постоянная нехватка денег бьёт по здоровью и работе."],
+  mortgage:["🏠","Ипотека","Смотрите не на ставку, а на платёж и долю дохода. Ниже 40% — комфортно."],
+};
+
+/* ---------- events ---------- */
+const EV={
+  iphone:{e:"📱",t:"Новый iPhone",d:"Новая модель за 120 000 сом. В магазине «0% рассрочка на год», но в рассрочку цена на 20% выше, чем за наличные.",
+    c:[{b:"Взять в рассрочку",s:"10 000 сом в месяц, кажется немного",f:()=>{S.oneOff+=144000;S.stress+=4;learn("zero");return[["neg","−144 000 сом за год"]]}},
+       {b:"Купить модель попроще",s:"40 000 сом сразу",f:()=>{S.cash-=40000;learn("zero");return[["neg","−40 000 сом"],["pos","+104 000 сом к накоплениям за год"]]}},
+       {b:"Оставить старый",s:"Он ещё работает",f:()=>{learn("zero");S.stress+=2;return[["pos","Деньги остаются на квартиру"]]}}],L:"zero"},
+  queue:{e:"🏛️",t:"Очередь на госпрограмму",d:"Открыта запись в очередь государственной жилищной программы: низкая ставка и маленький взнос, но ждать минимум 3 года. Нужны справки и полдня в очереди.",
+    c:[{b:"Записаться сейчас",s:"Бесплатно, нужно время",f:()=>{S.queueSince=S.cal;learn("queue");return[["pos","Вы в очереди с "+S.cal+" года"]]}},
+       {b:"Позже, сейчас некогда",s:"Можно записаться в разделе «Квартира»",f:()=>{learn("queue");return[["neu","Очередь не ждёт"]]}}],L:"queue"},
+  pyramid:{e:"🤑",t:"«Вложи 100 000 — через месяц 150 000»",d:"Друг клянётся, что уже вывел деньги. «Все вкладывают, места заканчиваются».",
+    c:[{b:"Вложить 100 000",s:"Шанс заработать",f:()=>{S.cash-=100000;S.stress+=15;learn("pyramid");return[["neg","−100 000 сом. Проект исчез через 2 месяца"]]}},
+       {b:"Вложить 20 000 на пробу",s:"Немного не страшно",f:()=>{S.cash-=20000;S.stress+=5;learn("pyramid");return[["neg","−20 000 сом. Деньги не вернулись"]]}},
+       {b:"Отказаться",s:"Слишком хорошо, чтобы быть правдой",f:()=>{learn("pyramid");return[["pos","Деньги целы"]]}}],L:"pyramid"},
+  courses:{e:"🎓",t:"Курсы аналитики данных",d:"Курс за 40 000 сом и три месяца вечеров. Выпускники обычно получают прибавку.",
+    c:[{b:"Пройти курс",s:"Будет тяжело",f:()=>{S.cash-=40000;S.skill=true;S.stress+=6;learn("skill");return[["neg","−40 000 сом"],["pos","+16% к зарплате со следующего года"]]}},
+       {b:"Не сейчас",s:"Отдохнуть важнее",f:()=>{S.stress-=4;return[["neu","Зарплата растёт обычным темпом"]]}}],L:"skill"},
+  layoff:{e:"📦",t:"Сокращение",d:"Компания закрыла отдел. Надо искать работу.",
+    c:[{b:"Взять первую попавшуюся работу",s:"1 месяц без дохода, зарплата −10%",f:()=>{S.lostMonths=1;S.salary*=0.9;S.stress+=8;learn("cushion");return[["neg","−1 месяц дохода"],["neg","Зарплата −10%"]]}},
+       {b:"Искать по специальности",s:"3 месяца без дохода, зарплата +5%",f:()=>{S.lostMonths=3;S.salary*=1.05;S.stress+=(cushionMonths()>=3?4:14);learn("cushion");return[["neg","−3 месяца дохода"],["pos","Зарплата +5%"]]}}],L:"cushion"},
+  deval:{e:"💱",t:"Сом подешевел",d:"За месяц доллар подорожал на 12%. Квартиры продают в долларах, а зарплата в сомах.",
+    pre:()=>{S.fx*=1.12;}, c:[{b:"Урезать расходы на год",s:"Минус 10% трат, плюс стресс",f:()=>{S.livingAdj=-0.1;S.stress+=6;learn("fx");return[["neu","Квартира в сомах подорожала на 12%"],["pos","Траты −10% на год"]]}},
+       {b:"Жить как прежде",s:"Посмотрим, что будет",f:()=>{learn("fx");return[["neu","Квартира в сомах подорожала на 12%"]]}}],L:"fx"},
+  brother:{e:"✈️",t:"Брат работает в Москве",d:"Он предлагает присылать 12 000 сом в месяц на общую квартиру для семьи.",
+    c:[{b:"Согласиться и записать договорённость",s:"Кто сколько вносит и чья доля",f:()=>{S.brother=12000;S.stress-=5;learn("family");return[["pos","+144 000 сом в год"]]}},
+       {b:"Отказаться, копить самому",s:"Без обязательств перед семьёй",f:()=>{learn("family");return[["neu","Всё зависит от вас"]]}}],L:"family"},
+  payday:{e:"⏰",t:"До зарплаты 6 дней",d:"Не хватает 15 000 сом. В ленте реклама: «Займ за 5 минут, всего 0,6% в день».",
+    c:[{b:"Взять займ",s:"Быстро и без справок",f:()=>{S.micro+=15000;S.stress+=6;learn("payday");return[["neg","Микрозайм 15 000 сом: реальная ставка ≈ 860% годовых"]]}},
+       {b:"Затянуть пояс на неделю",s:"Неприятно, но бесплатно",f:()=>{S.stress+=4;learn("payday");return[["pos","Без нового долга"]]}},
+       {b:"Занять у друга без процентов",s:"Вернуть с зарплаты",f:()=>{S.stress+=3;learn("payday");return[["pos","Без процентов"]]}}],L:"payday"},
+  car:{e:"🚗",t:"Все пересели на машины",d:"Автокредит: 1 200 000 сом под 22% на 3 года, платёж около 46 000 сом в месяц.",
+    c:[{b:"Взять автокредит",s:"Новая машина сейчас",f:()=>{const p=annuity(1200000,0.22,36);S.loans.push({name:"Автокредит",bal:1200000,rate:0.22,pay:p,left:36});S.stress-=4;learn("car");return[["neg","Платёж "+som(p)+" в месяц"]]}},
+       {b:"Подержанная за 300 000",s:"Из накоплений",f:()=>{S.cash-=300000;learn("car");return[["neg","−300 000 сом"]]}},
+       {b:"Такси и автобус",s:"Квартира важнее",f:()=>{learn("car");return[["pos","Накопления целы"]]}}],L:"car"},
+  deposit:{e:"🏦",t:"Депозит 9% годовых",d:"Банк предлагает хранить накопления на депозите в сомах.",cond:()=>!S.deposit,
+    c:[{b:"Открыть депозит",s:"Деньги растут, снять можно с потерей процентов",f:()=>{S.deposit=true;learn("deposit");return[["pos","+9% в год к накоплениям"]]}},
+       {b:"Хранить дома",s:"Так надёжнее",f:()=>{learn("deposit");return[["neu","Инфляция ест накопления"]]}}],L:"deposit"},
+  dev:{e:"🏗️",t:"Скидка 10% от застройщика",d:"«Внесите 30% сегодня — дом сдадим через 2 года». Отдел продаж очень торопит.",cond:()=>!S.home,
+    c:[{b:"Проверить застройщика",s:"Разрешения, договор, сданные дома",f:()=>{S.devChecked=true;learn("checkdev");return[["pos","Риск задержки стройки ниже"],["pos","Скидка 10% сохранится в разделе «Квартира»"]]}},
+       {b:"Пропустить",s:"Не сейчас",f:()=>{learn("checkdev");return[["neu","Без изменений"]]}}],L:"checkdev"},
+  health:{e:"🏥",t:"Операция для мамы",d:"Нужно 80 000 сом в течение недели.",
+    c:[{b:"Оплатить из накоплений",s:"Для этого они и нужны",f:()=>{if(S.cash>=80000){S.cash-=80000;learn("cushion");return[["neg","−80 000 сом"],["pos","Без долгов"]]}S.micro+=80000-Math.max(0,S.cash);S.cash=Math.max(0,S.cash-80000);S.stress+=10;learn("cushion");return[["neg","Накоплений не хватило — микрозайм"]]}},
+       {b:"Микрозайм",s:"Сохранить накопления",f:()=>{S.micro+=80000;S.stress+=8;learn("spiral");return[["neg","Долг 80 000 сом под высокий процент"]]}}],L:"cushion"},
+  raise:{e:"🎉",t:"Повышение на 15%",d:"Друзья зовут отметить и обновить гардероб. Новая жизнь — новые траты?",
+    pre:()=>{S.salary*=1.15;}, c:[{b:"Поднять траты вместе с доходом",s:"Заслужили",f:()=>{S.living+=S.salary*0.12;S.stress-=6;learn("lifestyle");return[["pos","Зарплата +15%"],["neg","Траты тоже выросли"]]}},
+       {b:"Откладывать прибавку",s:"Траты как раньше",f:()=>{learn("lifestyle");return[["pos","Зарплата +15%, всё сверху — на квартиру"]]}}],L:"lifestyle"},
+};
+function buildDeck(){
+  const pool=["pyramid","courses","brother","payday","car","deposit","dev","health","raise"].sort(()=>Math.random()-.5);
+  const d=["iphone","queue",...pool.slice(0,8)];
+  // guarantee layoff in years 4–7 and devaluation in 3–8
+  d.splice(3+Math.floor(Math.random()*4),0,"layoff"); d.splice(2+Math.floor(Math.random()*6),0,"deval");
+  return d.slice(0,YEARS);
+}
+
+/* ---------- housing offers ---------- */
+function offers(){
+  const price=homeValue();
+  const list=[];
+  const bankLoan=price*0.8, bankPay=annuity(bankLoan,0.12,300);
+  list.push({id:"bank",name:"Ипотека банка",tag:"в сомах",price,down:price*0.2,loan:bankLoan,rate:0.12,months:300,pay:bankPay,
+    total:bankPay*300,ok:true,note:"12% годовых, 25 лет, взнос 20%"});
+  const gp=price*0.9, gLoan=gp*0.9, gPay=annuity(gLoan,0.08,180);
+  const inQ=S.queueSince!==null, ready=inQ&&S.cal-S.queueSince>=3;
+  list.push({id:"gov",name:"Госпрограмма",tag:"очередь",price:gp,down:gp*0.1,loan:gLoan,rate:0.08,months:180,pay:gPay,total:gPay*180,ok:ready,
+    note:"8% годовых, 15 лет, взнос 10%, квартира дальше от центра",
+    lock: ready?null:(inQ?("Очередь подойдёт в "+(S.queueSince+3)+" году"):"Вы не в очереди")});
+  const dp=price*(S.devChecked?0.9:1.0)*1.0, dDown=dp*0.3, restUSD=dp*0.7/S.fx, dPayUSD=restUSD/36;
+  list.push({id:"dev",name:"Рассрочка застройщика",tag:"в долларах",price:dp,down:dDown,loan:restUSD*S.fx,rate:0,months:36,pay:dPayUSD*S.fx,total:restUSD*S.fx,ok:true,
+    note:"0%, 3 года, взнос 30%, дом сдадут через 2 года. Пока строят — платите аренду"+(S.devChecked?", скидка 10%":""),restUSD,dPayUSD});
+  return list;
+}
+function oilonCheck(o){
+  const extra=o.pay, newD=dti(extra)-0;
+  const rows=[];
+  const e=o.rate>0?ear(o.loan,o.pay,o.months):0;
+  if(o.id==="dev") rows.push(["y","Ставка 0%, но платёж привязан к доллару: если сом ослабнет на 10%, платёж вырастет на 10%."]);
+  else rows.push([e>15?"y":"g","Реальная ставка "+pct(e)+" · переплата "+som(o.total-o.loan)]);
+  rows.push([newD>60?"r":newD>40?"y":"g","Платежи по долгам: "+pct(newD)+" дохода"+(newD>60?" — банк откажет":"")]);
+  const left=S.cash-o.down;
+  rows.push([left/Math.max(1,monthlyOut()+o.pay)>=3?"g":"y","После взноса останется "+som(Math.max(0,left))+(left/Math.max(1,monthlyOut()+o.pay)>=3?" — подушка есть":" — подушки почти нет")]);
+  return {rows,newD};
+}
+
+/* ---------- rendering ---------- */
+function focusCard(){if(window.innerWidth<880&&S.phase!=="intro"){const c=$("#card");requestAnimationFrame(()=>c.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}));}}
+function renderScene(){
+  $("#yearBig").textContent=S.phase==="end"?S.cal-1:S.cal; const a=S.age,a10=a%10,a100=a%100; $("#ageTxt").textContent="Вам "+a+" "+((a100>10&&a100<15)||a10===0||a10>=5?"лет":a10===1?"год":"года");
+  $("#fxTxt").textContent="$1 = "+S.fx.toFixed(1).replace(".",",")+" сом";
+  const g=$("#bld");
+  if(!g.dataset.built){
+    let h=""; const x0=150,w=100,floors=9,y0=246-floors*20-10;
+    h+=`<rect x="${x0}" y="${y0}" width="${w}" height="${246-y0}" fill="var(--bld)"/>`;
+    h+=`<rect x="${x0-4}" y="${y0-6}" width="${w+8}" height="8" fill="#1A2236"/>`;
+    let k=0;
+    for(let f=0;f<floors;f++)for(let c=0;c<4;c++){const x=x0+10+c*22,y=y0+10+f*20; h+=`<rect class="win" id="w${k}" x="${x}" y="${y}" width="14" height="11" rx="1.5" fill="#3A4766"/>`;k++;}
+    h+=`<rect x="${x0+40}" y="228" width="20" height="18" fill="#1A2236"/>`;
+    g.innerHTML=h; g.dataset.built="1";
+  }
+  const total=36; const cheapest=Math.min(...offers().filter(o=>o.ok).map(o=>o.down));
+  let p= S.home?1:clamp(S.cash/cheapest,0,1);
+  const on=Math.round(p*total);
+  for(let k=0;k<total;k++){const el=document.getElementById("w"+k); el.classList.toggle("on",k>=total-on); el.classList.toggle("mine",!!(S.home&&livesInOwn()&&k===total-15));}
+}
+function stat(label,val,cls=""){return `<div class="stat ${cls}"><small>${label}</small><strong>${val}</strong></div>`}
+function renderStats(){
+  const st=S.stress, col=st>70?"var(--red)":st>40?"var(--gold)":"var(--green)";
+  const homeStatus=!S.home?"Снимаете за "+som(S.rent)+"/мес":(livesInOwn()?"Своя квартира":"Дом строится, сдача в "+S.home.ready);
+  const cheapest=Math.min(...offers().filter(o=>o.ok).map(o=>o.down));
+  const pill=S.home?"Ваша квартира":(S.cash>=cheapest?"Можно покупать":"До взноса "+som(Math.max(0,cheapest-S.cash)));
+  $("#stats").innerHTML=
+    stat("Накопления",som(S.cash))+
+    stat("Долги",som(debts()),debts()>0&&!S.home?"neg":"")+
+    stat("Зарплата в месяц",som(S.salary))+
+    `<div class="stat"><small>Стресс</small><strong>${Math.round(st)}</strong><div class="bar"><i style="width:${st}%;background:${col}"></i></div></div>`+
+    `<button class="homeBtn" id="homeBtn" ${S.phase==="end"?"disabled":""}><span>Квартира<small>${homeStatus}</small></span><span class="pill">${pill}</span></button>`;
+  $("#homeBtn").onclick=openSheet;
+}
+function render(){renderScene();renderStats();}
+
+function showEvent(){
+  const id=S.deck[S.i]; const ev=EV[id]; S.phase="event";
+  if(ev.cond&&!ev.cond()){S.deck[S.i]="raise"; return showEvent();}
+  if(ev.pre&&!S._pre){ev.pre();S._pre=true;}
+  render();
+  const card=$("#card"); card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter"); focusCard();
+  card.innerHTML=`<div class="muted">Год ${S.i+1} из ${YEARS}</div><div class="emoji" style="margin-top:8px">${ev.e}</div><h2>${ev.t}</h2><p class="lead">${ev.d}</p>
+   <div class="choices">${ev.c.map((c,k)=>`<button class="choice" data-k="${k}"><b>${c.b}</b><span>${c.s}</span></button>`).join("")}</div>`;
+  card.querySelectorAll(".choice").forEach(b=>b.onclick=()=>choose(ev,+b.dataset.k));
+}
+function deltasHTML(d){return `<div class="deltas">${d.map(([t,x])=>`<span class="delta ${t}">${x}</span>`).join("")}</div>`}
+function choose(ev,k){
+  S._pre=false;
+  const d=ev.c[k].f(); S.stress=clamp(S.stress,0,100);
+  const L=LESSONS[ev.L];
+  render();
+  const card=$("#card"); card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter"); focusCard();
+  card.innerHTML=`<div class="muted">Год ${S.i+1} из ${YEARS}</div><div class="emoji" style="margin-top:8px">${ev.e}</div><h2>${ev.c[k].b}</h2>${deltasHTML(d)}
+   <div class="lesson"><b>${L[0]} ${L[1]}</b><p>${L[2]}</p></div>
+   <p class="muted">Можно посмотреть варианты квартиры, прежде чем закончить год.</p>
+   <button class="primary" id="next">Закончить ${S.cal} год</button>`;
+  $("#next").onclick=finishYear;
+}
+function finishYear(){
+  endYear();
+  if(S.i>=YEARS) return showEnd();
+  const y=S.yearLog;
+  render();
+  const card=$("#card"); card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter"); focusCard();
+  card.innerHTML=`<div class="muted">Итоги ${S.cal-1} года</div><h2>${y.delta>=0?"Отложено "+som(y.delta):"Потрачено больше, чем заработано"}</h2>
+   ${y.log.length?deltasHTML(y.log):""}
+   <div class="summary"><span>Накопления</span><span class="v">${som(S.cash)}</span><span>Долги</span><span class="v">${som(debts())}</span>
+   <span>Квартира стоит</span><span class="v">${som(homeValue())}</span><span>Доля дохода на долги</span><span class="v">${pct(dti())}</span></div>
+   <p class="muted" style="margin-top:12px">Цены на квартиры выросли, курс доллара изменился, зарплата и расходы тоже.</p>
+   <button class="primary" id="go">Начать ${S.cal} год</button>`;
+  $("#go").onclick=showEvent;
+}
+
+/* ---------- sheet ---------- */
+function openSheet(){
+  const sh=$("#sheet");
+  if(S.home){
+    const h=S.home;
+    sh.innerHTML=`<h2 id="sheetTitle">Ваша квартира</h2>
+    <div class="kv"><span>Программа</span><span>${h.label}</span><span>Стоимость сейчас</span><span>${som(homeValue())}</span>
+    <span>Остаток долга</span><span>${som(h.kind==="dev"?h.balUSD*S.fx:h.bal)}</span><span>Платёж в месяц</span><span>${som(h.kind==="dev"?devPay():mortgagePay())}</span>
+    <span>Въезд</span><span>${livesInOwn()?"Вы живёте у себя":"в "+h.ready+" году"}</span></div>
+    <button class="ghost" id="close">Закрыть</button>`;
+  } else {
+    const os=offers();
+    sh.innerHTML=`<h2 id="sheetTitle">Квартира в Бишкеке</h2><p class="lead">1-комнатная, сейчас ${som(homeValue())} ($${fmt(S.priceUSD)}). Накоплено ${som(S.cash)}.</p>
+     ${os.map(o=>{const c=oilonCheck(o); const can=o.ok&&S.cash>=o.down&&!(o.id!=="dev"&&c.newD>60);
+       return `<div class="offer"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>${o.name}</h3><span class="tag">${o.tag}</span></div>
+       <p class="muted" style="margin:4px 0 0">${o.note}</p>
+       <div class="kv"><span>Первый взнос</span><span>${som(o.down)}</span><span>Платёж в месяц</span><span>${som(o.pay)}</span></div>
+       ${o.lock?`<div class="check y">🔒 ${o.lock}</div>`:c.rows.map(([l,t])=>`<div class="check ${l}">${l==="g"?"✅":l==="y"?"⚠️":"⛔"} ${t}</div>`).join("")}
+       <button class="primary" data-buy="${o.id}" ${can?"":"disabled"} style="${can?"":"opacity:.45;cursor:not-allowed"}">${!o.ok?"Недоступно":S.cash<o.down?"Не хватает "+som(o.down-S.cash):(o.id!=="dev"&&c.newD>60?"Банк откажет":"Купить")}</button></div>`}).join("")}
+     ${S.queueSince===null?`<button class="ghost" id="q" style="margin-bottom:10px">Встать в очередь госпрограммы</button>`:""}
+     <p class="muted">Проверка в зелёных и жёлтых плашках — это Ойлон: реальная ставка, переплата и доля дохода.</p>
+     <button class="ghost" id="close">Пока снимать дальше</button>`;
+    sh.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{if(!b.disabled)buy(os.find(o=>o.id===b.dataset.buy))});
+    const q=$("#q"); if(q) q.onclick=()=>{S.queueSince=S.cal;learn("queue");openSheet();render();};
+  }
+  $("#close").onclick=closeSheet;
+  $("#sheetWrap").classList.add("open");
+}
+function closeSheet(){$("#sheetWrap").classList.remove("open")}
+$("#sheetWrap").addEventListener("click",e=>{if(e.target.id==="sheetWrap")closeSheet()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
+
+function buy(o){
+  S.cash-=o.down; learn("mortgage");
+  if(o.id==="dev"){const delay=Math.random()<(S.devChecked?0.12:0.4); S.home={kind:"dev",label:"Рассрочка застройщика",balUSD:o.restUSD,payUSD:o.dPayUSD,ready:S.cal+2+(delay?1:0),delayed:delay}; learn("fx");}
+  else S.home={kind:o.id,label:o.name,bal:o.loan,rate:o.rate,pay:o.pay,ready:S.cal};
+  closeSheet(); render();
+  const card=$("#card"); card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter"); focusCard();
+  card.innerHTML=`<div class="emoji">🔑</div><h2>${o.id==="dev"?"Договор подписан":"Ключи у вас"}</h2>
+   <p class="lead">${o.id==="dev"?(S.home.delayed?"Стройка задержится на год: въезд в "+S.home.ready+" году. До этого платите и аренду, и рассрочку.":"Въезд в "+S.home.ready+" году. До этого платите и аренду, и рассрочку."):"Аренда больше не нужна. Теперь главное — не пропускать платежи."}</p>
+   ${deltasHTML([["neg","Взнос −"+som(o.down)],["neu","Платёж "+som(o.pay)+" в месяц"]])}
+   <div class="lesson"><b>${LESSONS.mortgage[0]} ${LESSONS.mortgage[1]}</b><p>${LESSONS.mortgage[2]}</p></div>
+   <button class="primary" id="next">Закончить ${S.cal} год</button>`;
+  $("#next").onclick=finishYear;
+}
+
+/* ---------- end ---------- */
+function verdict(){
+  const own=!!S.home, d=dti();
+  if(own&&livesInOwn()&&S.micro===0&&d<=50&&S.stress<60) return ["🏡","Хозяин своего дома","Квартира есть, долги под контролем, нервы целы."];
+  if(own&&(d>50||S.stress>=60)) return ["😮‍💨","Квартира ценой нервов","Своё жильё есть, но платежи давят. Подушка и меньше долгов сделали бы путь спокойнее."];
+  if(own) return ["🏗️","Ключи почти в руках","Квартира оформлена, въезд скоро."];
+  if(S.micro>0||debts()>S.cash) return ["🌀","Долговая яма","Дорогие займы съели путь к квартире. Хорошая новость: это можно исправить."];
+  return ["🧭","Почти у цели","Квартиры пока нет, но капитал растёт. Ещё немного дисциплины."];
+}
+function chartSVG(){
+  const h=S.history, w=320, ht=120, mx=Math.max(...h,1), mn=Math.min(...h,0);
+  const pts=h.map((v,i)=>[i/(h.length-1)*w, ht-(v-mn)/(mx-mn||1)*(ht-10)-5]);
+  const zero=ht-(0-mn)/(mx-mn||1)*(ht-10)-5;
+  return `<svg class="chart" viewBox="0 0 ${w} ${ht}" preserveAspectRatio="none" role="img" aria-label="Капитал по годам">
+   <line x1="0" x2="${w}" y1="${zero}" y2="${zero}" stroke="var(--line)" stroke-dasharray="4 4"/>
+   <polyline fill="none" stroke="var(--red)" stroke-width="3" stroke-linejoin="round" points="${pts.map(p=>p.join(",")).join(" ")}"/>
+   ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="var(--red)"/>`).join("")}</svg>`;
+}
+function countUp(el,to){
+  const t0=performance.now(),dur=900;
+  (function f(t){const k=Math.min(1,(t-t0)/dur);el.textContent=som(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0);
+}
+function showEnd(){
+  S.phase="end"; render();
+  const v=verdict(), cap=capital(), best=+(store.get("uigo_best")||0);
+  if(cap>best) store.set("uigo_best",String(Math.round(cap)));
+  const ls=Object.values(S.lessons);
+  const card=$("#card"); card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter"); focusCard();
+  card.innerHTML=`<div class="muted">${START}–${S.cal-1} · вам ${S.age}</div><div class="emoji" style="margin-top:8px">${v[0]}</div><h2>${v[1]}</h2><p class="lead">${v[2]}</p>
+   <div class="muted">Ваш капитал: накопления + квартира − долги</div><div class="big" id="capNum">0 сом</div>
+   ${chartSVG()}
+   <div class="summary"><span>Квартира</span><span class="v">${S.home?(livesInOwn()?"своя":"строится"):"аренда"}</span>
+   <span>Долги</span><span class="v">${som(debts())}</span><span>Доля дохода на долги</span><span class="v">${pct(dti())}</span>
+   <span>Лучший результат</span><span class="v">${som(Math.max(best,cap))}</span></div>
+   <h2 style="margin-top:20px">Чему вы научились: ${ls.length} из ${Object.keys(LESSONS).length}</h2>
+   <div class="badges">${ls.map(l=>`<span class="badge" title="${l[2]}">${l[0]} ${l[1]}</span>`).join("")}</div>
+   <button class="primary" id="again">Сыграть ещё раз</button>
+   <p class="muted" style="margin-top:12px">В жизни проверяйте реальный кредит в Ойлон до подписи.</p>`;
+  countUp($("#capNum"),cap);
+  $("#again").onclick=()=>{newGame();showIntro();};
+}
+
+/* ---------- intro ---------- */
+function showIntro(){
+  S.phase="intro"; render();
+  const best=+(store.get("uigo_best")||0);
+  const card=$("#card"); card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter"); focusCard();
+  card.innerHTML=`<h1>Үйгө жол</h1><p class="lead" style="font-size:18px">Путь к своей квартире в Бишкеке. Десять лет жизни за пять минут.</p>
+   <div class="summary" style="margin-bottom:16px"><span>Вам</span><span class="v">24 года</span><span>Зарплата</span><span class="v">${som(S.salary)}</span>
+   <span>Аренда</span><span class="v">${som(S.rent)}</span><span>Накоплено</span><span class="v">${som(S.cash)}</span><span>Квартира стоит</span><span class="v">${som(homeValue())}</span></div>
+   <p>Каждый год — одно решение. В любой момент откройте «Квартира», чтобы сравнить ипотеку, госпрограмму и рассрочку застройщика. Окна дома загораются, когда вы ближе к первому взносу.</p>
+   ${best?`<p class="muted">Ваш лучший капитал: ${som(best)}</p>`:""}
+   <button class="primary" id="start">Начать игру</button>`;
+  $("#start").onclick=showEvent;
+}
+
+newGame(); showIntro();
+</script>
+</body>
+</html>
